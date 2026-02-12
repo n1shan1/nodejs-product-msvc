@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  auth-service:
+    build: ./auth-service
+    ports:
+      - "7020:7020"
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/auth-service
+
+  product-service:
+    build: ./product-service
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mongodb
+      - rabbitmq
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/product-service
+      - RABBITMQ_URI=amqp://rabbitmq:5672
+
+  order-service:
+    build: ./order-service
+    ports:
+      - "9090:9090"
+    depends_on:
+      - mongodb
+      - rabbitmq
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/order-service
+      - RABBITMQ_URI=amqp://rabbitmq:5672
+
+volumes:
+  mongodb_data:
