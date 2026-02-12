@@ -1,62 +1,59 @@
 const express = require("express");
 const app = express();
 const PORT = process.env.PORT || 7020;
-const mongoose = require("mongoose")
-const User = require("./models/user")
-const jwt = require("jsonwebtoken")
+const mongoose = require("mongoose");
+const User = require("./models/user");
+const jwt = require("jsonwebtoken");
 
-mongoose.connect(process.env.MONGO_URI || "mongodb://localhost/auth-service", {
+mongoose
+  .connect(process.env.MONGO_URI || "mongodb://localhost/auth-service", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-}).then(() => {
-    console.log("AUTH SERVICE DB CONNECTED")
-})
+  })
+  .then(() => {
+    console.log("AUTH SERVICE DB CONNECTED");
+  });
 
 app.use(express.json());
 
+app.post("/auth/login", async (req, res) => {
+  const { email, password } = req.body;
 
-app.post("/auth/login", async (req, res) =>{
-    const {email, password} = req.body;
-
-    const user = await User.findOne({email});
-    if(!user){
-        return res.json({message: "User doesn't exits"})
-    } else {
-
-        if(password !== user.password) {
-            return res.json({message: "Passwod icorrect"})
-        }
-
-        const payload = {
-            email,
-            name: user.name,
-        }
-        const token = jwt.sign(payload, "this_is_secret");
-        return res.json({token: token})
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.json({ message: "User doesn't exits" });
+  } else {
+    if (password !== user.password) {
+      return res.json({ message: "Passwod icorrect" });
     }
-})
 
+    const payload = {
+      email,
+      name: user.name,
+    };
+    const token = jwt.sign(payload, "this_is_secret");
+    return res.json({ token: token });
+  }
+});
 
 app.post("/auth/register", async (req, res) => {
-    const {email, password, name} = req.body;
+  const { email, password, name } = req.body;
 
-    const userExists = await User.findOne({email});
+  const userExists = await User.findOne({ email });
 
-    if(userExists) {
-        return res.status(402).json({message: "User already exists"});
-    } else {
-        const newUser = new User({
-            name,
-            email,
-            password
-        })
-        newUser.save();
-        return res.status(200).json(newUser)
-    }
-
-})
-
+  if (userExists) {
+    return res.status(402).json({ message: "User already exists" });
+  } else {
+    const newUser = new User({
+      name,
+      email,
+      password,
+    });
+    newUser.save();
+    return res.status(200).json(newUser);
+  }
+});
 
 app.listen(PORT, () => {
-    console.log(`Auth service is running at port ${PORT}`)
-})
+  console.log(`Auth service is running at port ${PORT}`);
+});
